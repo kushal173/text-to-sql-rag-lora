@@ -1,0 +1,27 @@
+{
+  "CodeLlama_Chinook_RAG": {
+    "n": 30,
+    "exact_match_accuracy": 16.67,
+    "execution_match_accuracy": 40.0
+  },
+  "Mistral_Chinook_Baseline": {
+    "n": 30,
+    "exact_match_accuracy": 20.0,
+    "execution_match_accuracy": 56.67
+  },
+  "Mistral_Chinook_RAG": {
+    "n": 30,
+    "exact_match_accuracy": 26.67,
+    "execution_match_accuracy": 66.67
+  },
+  "Mistral_Spider_Baseline": {
+    "n": 108,
+    "exact_match_accuracy": 4.63,
+    "execution_match_accuracy": 22.22
+  },
+  "Mistral_Spider_RAG": {
+    "n": 108,
+    "exact_match_accuracy": 12.96,
+    "execution_match_accuracy": 29.63
+  }
+}
