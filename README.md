@@ -169,3 +169,54 @@ The full run keeps the original Mistral + MiniLM + FAISS-L2 + `top_k=3` pipeline
 ```text
 results/mistral_chinook_old_rag_complete_metrics.json
 ```
+
+<!-- EXPANDED_EVAL_START -->
+
+## Comprehensive RAG Evaluation
+
+The final **Mistral-7B-Instruct-v0.2 + RAG** pipeline was evaluated on
+**30 held-out Chinook Text-to-SQL questions**.
+
+### Retrieval Metrics
+
+| Metric | Score |
+|---|---:|
+| Table Recall@3 | **96.67%** |
+| Table Precision@3 | **54.33%** |
+| Table F1@3 | **66.48%** |
+| Hit Rate@3 | **96.67%** |
+| Full Table Coverage@3 | **96.67%** |
+| MRR | **95.00%** |
+| MAP@3 | **85.37%** |
+| nDCG@3 | **88.44%** |
+
+### Text-to-SQL Generation Metrics
+
+| Metric | Score |
+|---|---:|
+| Exact Match Accuracy | **30.00%** |
+| Execution Match Accuracy | **66.67%** |
+| SQL Validity Rate | **96.67%** |
+| SQL Extraction Success Rate | **100.00%** |
+| Schema Compliance Rate | **100.00%** |
+| Table Selection Precision | **86.67%** |
+| Table Selection Recall | **96.67%** |
+| Table Selection F1 | **89.89%** |
+
+### Grounding and Safety Metrics
+
+| Metric | Score |
+|---|---:|
+| Context Grounding Score | **95.00%** |
+| Fully Grounded Query Rate | **93.33%** |
+| Single-Statement Compliance | **100.00%** |
+| Read-Only Compliance | **100.00%** |
+| Unsafe SQL Rate | **0.00%** |
+
+**Execution Match Accuracy (66.67%)** is used as the primary end-to-end
+measure of generated SQL correctness.
+
+The retrieval results show strong table coverage and ranking quality,
+while generation remains the main source of remaining end-to-end errors.
+
+<!-- EXPANDED_EVAL_END -->
