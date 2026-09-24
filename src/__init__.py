@@ -15,6 +15,7 @@ from .prompts import PromptBuilder
 from .rag import ChinookRetriever
 
 from .retrieval_evaluation import evaluate_retriever, extract_chunk_tables, extract_sql_tables
+from .scope_evaluation import evaluate_scope_predictions
 
 __all__ = [
     "ChinookData",
@@ -30,5 +31,6 @@ __all__ = [
     "SQLEvaluator",
     "evaluate_retriever",
     "extract_chunk_tables",
-    "extract_sql_tables"
+    "extract_sql_tables",
+    "evaluate_scope_predictions"
 ]

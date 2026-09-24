@@ -8,6 +8,7 @@ from src.mistral import MistralPromptBuilder, MistralRunner
 from src.mistral_evaluation import MistralSQLEvaluator
 from src.prompts import PromptBuilder
 from src.rag import ChinookRetriever
+from src.scope_evaluation import evaluate_scope_predictions
 
 
 ROOT = Path(__file__).parents[1]
@@ -97,8 +98,43 @@ class ProjectTests(unittest.TestCase):
         rows, metrics = evaluate_retriever(examples, DummyRetriever(), top_k=3)
         self.assertEqual(metrics["Table Recall@3"], 1.0)
         self.assertEqual(metrics["Table Precision@3"], round(2 / 3, 4))
+        self.assertEqual(metrics["Table F1@3"], 0.8)
+        self.assertEqual(metrics["Hit Rate@3"], 1.0)
+        self.assertEqual(metrics["Full Table Coverage@3"], 1.0)
         self.assertEqual(metrics["MRR"], 1.0)
+        self.assertGreater(metrics["MAP@3"], 0.8)
+        self.assertGreater(metrics["nDCG@3"], 0.9)
         self.assertEqual(rows[0]["gold_tables"], ["album", "artist"])
+
+    def test_extended_generation_metrics(self):
+        evaluator = SQLEvaluator(ROOT / "datasets/chinook/chinook.db")
+        rows, metrics = evaluator.evaluate([{
+            "question": "Count tracks",
+            "ground_truth": "SELECT COUNT(*) FROM Track;",
+            "generated_sql": "SELECT COUNT(*) FROM Track;",
+            "retrieved_context": ["CREATE TABLE Track (TrackId INTEGER);"],
+        }])
+        self.assertEqual(metrics["Exact Match Accuracy"], 100.0)
+        self.assertEqual(metrics["Execution Match Accuracy"], 100.0)
+        self.assertEqual(metrics["SQL Validity Rate"], 100.0)
+        self.assertEqual(metrics["Read-Only Compliance Rate"], 100.0)
+        self.assertEqual(metrics["Unsafe SQL Rate"], 0.0)
+        self.assertEqual(metrics["Schema Compliance Rate"], 100.0)
+        self.assertEqual(metrics["Mean Table Selection F1"], 1.0)
+        self.assertEqual(metrics["Mean Result-Set F1"], 1.0)
+        self.assertEqual(metrics["Fully Grounded Query Rate"], 100.0)
+        self.assertTrue(rows[0]["sql_valid"])
+
+    def test_scope_metrics(self):
+        metrics = evaluate_scope_predictions([
+            {"expected_in_scope": True, "predicted_in_scope": True},
+            {"expected_in_scope": False, "predicted_in_scope": False},
+            {"expected_in_scope": False, "predicted_in_scope": True},
+        ])
+        self.assertEqual(metrics["Evaluated Scope Cases"], 3)
+        self.assertEqual(metrics["Scope Accuracy"], round(2 / 3, 4))
+        self.assertEqual(metrics["In-Scope Recall"], 1.0)
+        self.assertEqual(metrics["Out-of-Scope Detection Recall"], 0.5)
 
 
 if __name__ == "__main__":

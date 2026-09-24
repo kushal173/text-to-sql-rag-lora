@@ -33,9 +33,8 @@ class ExperimentRunner:
                 else:
                     prompt = PromptBuilder.schema_or_rag(question, schema_text)
             else:
-                prompt = PromptBuilder.schema_or_rag(
-                    question, retriever.retrieve(question, top_k=top_k)
-                )
+                retrieved_context = retriever.retrieve(question, top_k=top_k)
+                prompt = PromptBuilder.schema_or_rag(question, retrieved_context)
             raw = self.model_runner.generate(prompt, max_new_tokens=max_new_tokens)
             generated = self.clean_output(raw)
             predictions.append(
@@ -44,6 +43,7 @@ class ExperimentRunner:
                     "ground_truth": example.get("query", example.get("gold_sql", "")),
                     "raw_completion": raw,
                     "generated_sql": generated,
+                    "retrieved_context": retrieved_context if retriever is not None else None,
                 }
             )
             print(f"{number}/{len(examples)} generated")

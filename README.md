@@ -78,3 +78,94 @@ Because the repository does not contain manual chunk-relevance labels, retrieval
 - **MRR** — reciprocal rank of the first retrieved chunk containing any gold-required table.
 
 These are intentionally reported as table-grounded retrieval metrics rather than generic human-relevance metrics. Existing Exact Match and Execution Match remain the SQL-generation/end-to-end metrics.
+
+## Comprehensive RAG evaluation added
+
+The project now reports a broader deterministic evaluation suite **without changing the original retriever, prompts, model, or generation logic**. This makes it suitable for ablation studies of the improvement ideas used in this project.
+
+### Retrieval quality
+
+The old FAISS + `all-MiniLM-L6-v2` retriever can now be evaluated with:
+
+- **Table Recall@K** — required-table coverage.
+- **Table Precision@K** — how much retrieved table context is actually required.
+- **Table F1@K** — balance of table precision and recall.
+- **Hit Rate@K** — whether at least one relevant chunk is retrieved.
+- **Full Table Coverage@K** — whether all required tables are retrieved.
+- **MRR** — rank of the first relevant chunk.
+- **MAP@K** — precision across relevant chunk ranks.
+- **nDCG@K** — rank-sensitive retrieval relevance.
+
+The chunk relevance label is deterministic: a chunk is relevant when it contains at least one table required by the held-out gold SQL. This is a table-grounded proxy because the repository has no manual chunk-relevance annotations.
+
+### Generation / end-to-end quality
+
+In addition to the original metrics:
+
+- **Exact Match Accuracy**
+- **Execution Match Accuracy**
+
+both SQL evaluators now report:
+
+- **SQL Validity Rate** — generated SQL executes successfully.
+- **SQL Extraction Success Rate** — a non-empty SQL statement was extracted.
+- **Single-Statement Compliance Rate** — output follows the one-query format expected by the prompt.
+- **Mean Result-Set Precision / Recall / F1** — partial credit when the result is close but not an exact execution match.
+- **Mean Table Selection Precision / Recall / F1** — whether generation selected the gold-required tables.
+
+### Grounding / faithfulness proxies
+
+For RAG runs the exact retrieved context used to generate each SQL query is retained in the result row. This enables:
+
+- **Mean Context Grounding Score** — fraction of tables used by generated SQL that were present in retrieved context.
+- **Fully Grounded Query Rate** — percentage of generated queries whose referenced tables are all supported by retrieved context.
+- **Schema Compliance Rate** — generated SQL references only tables that exist in the target SQLite schema.
+
+These are deterministic Text-to-SQL grounding proxies. They avoid using an LLM-as-a-judge for claims that can be verified directly from SQL and the database.
+
+### Safety / guardrail metrics
+
+For this project, classic natural-language toxicity is not a useful primary metric because the desired output is SQL. The relevant guardrail metrics are therefore:
+
+- **Read-Only Compliance Rate** — percentage of generations restricted to `SELECT`/`WITH` queries.
+- **Unsafe SQL Rate** — percentage containing mutating/destructive commands such as `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, or `PRAGMA`.
+
+### Scope adherence
+
+`src/scope_evaluation.py` adds metrics for a future scope classifier/router:
+
+- **Scope Accuracy**
+- **In-Scope Recall**
+- **Out-of-Scope Detection Recall**
+- **Scope Macro F1**
+- **Over-Refusal Rate**
+- **Under-Refusal Rate**
+
+The current repository does **not** contain a labeled in-scope/out-of-scope benchmark, so the project intentionally does not fabricate numerical scope results. Add rows containing `expected_in_scope` and `predicted_in_scope` to evaluate a router when one is introduced.
+
+### Mapping to the original improvement plan
+
+- **Chunking / embeddings / reranking / K tuning:** compare Recall, Precision, F1, Hit Rate, Full Coverage, MRR, MAP, and nDCG.
+- **Generator-model or system-prompt changes:** compare Exact Match, Execution Match, SQL Validity, result-set F1, extraction success, and single-statement compliance.
+- **Guardrails / toxicity-related robustness:** compare Read-Only Compliance and Unsafe SQL Rate.
+- **Scope classifier/router or query decomposition:** compare the optional scope metrics plus Schema Compliance and grounding metrics.
+
+## One-command full evaluation of the old Chinook RAG
+
+After installing `requirements.txt` on a CUDA Colab runtime, run:
+
+```bash
+python scripts/evaluate_old_mistral_chinook_full.py
+```
+
+For a quick smoke test first:
+
+```bash
+python scripts/evaluate_old_mistral_chinook_full.py --limit 3
+```
+
+The full run keeps the original Mistral + MiniLM + FAISS-L2 + `top_k=3` pipeline and writes all retrieval, generation, grounding, format, and guardrail metrics to:
+
+```text
+results/mistral_chinook_old_rag_complete_metrics.json
+```

@@ -158,6 +158,7 @@ class MistralExperiment:
                     "gold_sql": example["gold_sql"],
                     "raw_model_output": raw,
                     "clean_sql_extracted": self.runner.extract_sql(raw),
+                    "retrieved_context": context if retriever is not None else None,
                 }
             )
             print(f"{index}/{len(selected)} completed")
